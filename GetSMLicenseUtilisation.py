@@ -10,11 +10,17 @@
 import meraki
 import logging, sys, getopt, keyring, getpass
 
-loggingEnabled = False
+loggingEnabled = True
 
 
 def main(argv):
-    arg_apikey = keyring.get_password('MerakiAPI', 'personal')
+    ##arg_apikey = keyring.get_password('MerakiAPI', 'personal')
+    arg_apikey = keyring.get_password('MerakiAPI', 'LGFL'
+                                                   '')
+    fileForResults = "GetSMLicenseUtilisationResults.csv"
+    fileForResultsFail = "GetSMLicenseUtilisationResultsFail.txt"
+    fileForRawOrgDetails = "GetSMLicenseUtilisationResultsRawOrgs.txt"
+
     APIKeyExists = True
 
     if len(arg_apikey) == 0:
@@ -39,6 +45,7 @@ def main(argv):
     # Get Orgs for API Key
     orgs = client.organizations.getOrganizations()
     writeToLog(orgs, loggingEnabled)
+
     # For each Org, get networks
     for org in orgs:
         organization_id = (org['id'])
@@ -46,37 +53,60 @@ def main(argv):
         sm_licenses = 0
         sm_devices = 0
 
-        licenseResults = client.organizations.getOrganizationLicenseState(organizationId=organization_id)
+        writeToFile(fileForRawOrgDetails,organization_name)
 
-        writeToLog({"Licenses for org", organization_id, organization_name}, loggingEnabled)
-        writeToLog(licenseResults, loggingEnabled)
+        licenseResults = getLicenses(client, organization_id)
 
-        for thislicense, value in licenseResults['licensedDeviceCounts'].items():
-            if thislicense == "SM":
-                writeToLog({"Number of SM Licenses = ", thislicense, value}, loggingEnabled)
-                sm_licenses = value
+        if licenseResults == "fail":
+            stringToWrite = organization_id
+            stringToWrite += ","
+            stringToWrite += organization_name
+            stringToWrite += ","
+            stringToWrite += " does not have API key enabled"
+            writeToFile(fileForResultsFail, stringToWrite)
+        else:
+            writeToLog({"Licenses for org", organization_id, organization_name}, loggingEnabled)
+            writeToLog(licenseResults, loggingEnabled)
 
-        # get networks
-        ourNetworks = getNetworks(client, organization_id)
+            for thislicense, value in licenseResults['licensedDeviceCounts'].items():
+                if thislicense == "SM":
+                    writeToLog({"Number of SM Licenses = ", thislicense, value}, loggingEnabled)
+                    sm_licenses = value
 
-        for network in ourNetworks:
-            networkName = (network['name'])
-            networkID = (network['id'])
-            ourDevices = getDevices(client, networkID)
-            if ourDevices == "fail":
-                writeToLog({organization_id, networkID, networkName, "No SM Network"}, loggingEnabled)
+            # get networks
+            ourNetworks = getNetworks(client, organization_id)
+
+            if ourNetworks == "fail":
+                stringToWrite = organization_id
+                stringToWrite += ","
+                stringToWrite += organization_name
+                stringToWrite += ","
+                stringToWrite += " has incorrect licenses, error returned"
+                writeToFile(fileForResultsFail, stringToWrite)
             else:
-                ourDevicesList = ourDevices["devices"]
-                deviceCounter = 0
-                for ourDevice in ourDevicesList:
-                    if "id" in ourDevice:
-                        deviceCounter = deviceCounter + 1
-                writeToLog({organization_id, organization_name, networkID, networkName, deviceCounter}, loggingEnabled)
-                sm_devices = sm_devices + deviceCounter
+                for network in ourNetworks:
+                    networkName = (network['name'])
+                    networkID = (network['id'])
+                    ourDevices = getDevices(client, networkID)
+                    if ourDevices == "fail":
+                        writeToLog({organization_id, networkID, networkName, "No SM Network"}, loggingEnabled)
+                    else:
+                        ourDevicesList = ourDevices["devices"]
+                        deviceCounter = 0
+                        for ourDevice in ourDevicesList:
+                            if "id" in ourDevice:
+                                deviceCounter = deviceCounter + 1
+                        writeToLog({organization_id, organization_name, networkID, networkName, deviceCounter}, loggingEnabled)
+                        sm_devices = sm_devices + deviceCounter
 
-        collective_list[organization_id] = {'OrgName': organization_name, 'smLicenses': sm_licenses,
-                                            'enrolledDevices': sm_devices}
-    print(collective_list)
+                stringToWrite = organization_id
+                stringToWrite += "-"
+                stringToWrite += organization_name
+                stringToWrite += ","
+                stringToWrite += str(sm_licenses)
+                stringToWrite += ","
+                stringToWrite += str(sm_devices)
+                writeToFile(fileForResults, stringToWrite)
 
 
 def printhelp():
@@ -98,14 +128,39 @@ def getDevices(passedClient, passedNetworkID):
     return result
 
 
+def getLicenses(passedClient, passedOrgID):
+    try:
+        result = passedClient.organizations.getOrganizationLicenseState(organizationId=passedOrgID)
+    except meraki.APIError as e:
+        writeToLog(e, loggingEnabled)
+        result = 'fail'
+    return result
+
+
 def getNetworks(passedClient, passedOrgID):
-    networksResult = passedClient.networks.getOrganizationNetworks(organizationId=passedOrgID)
+    try:
+        networksResult = passedClient.networks.getOrganizationNetworks(organizationId=passedOrgID)
+    except meraki.APIError as e:
+        writeToLog(e, loggingEnabled)
+        networksResult = 'fail'
     return networksResult
 
 
 def writeToLog(MessageToLog, toLog):
     if toLog:
         logging.warning(MessageToLog)
+
+
+def writeToFile(passedFile, messagetoWrite):
+    openFileForRead = open(passedFile, 'r')
+    fileContents = openFileForRead.read()
+    openFileForRead.close()
+
+    openedFile = open(passedFile, 'w')
+    openedFile.writelines(fileContents)
+    openedFile.writelines('\n')
+    openedFile.writelines(messagetoWrite)
+    openedFile.close()
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ def main(argv):
     arg_network_id = ''
     # get command line arguments
     try:
-        opts, args = getopt.getopt(argv, 'k:n:')
+        opts, args = getopt.getopt(argv, 'k:n:d:')
     except getopt.GetOptError:
         if not APIKeyExists:
             printhelp(argv)
@@ -29,6 +29,8 @@ def main(argv):
                 arg_apikey = arg
         elif opt == '-n':
             arg_network_id = arg
+        elif opt == '-d':
+            arg_device_id = arg
 
     # if arg_apikey == '' or arg_network_id == '':
     if arg_network_id == '':
@@ -40,6 +42,22 @@ def main(argv):
 
     try:
 
+        ourDevices = client.sm.getNetworkSmDevices(networkId=arg_network_id, ids=arg_device_id, fields="isSupervised")
+
+        ourDevicesList = ourDevices["devices"]
+
+        for ourDevice in ourDevicesList:
+            isSupervised = ourDevice["isSupervised"]
+
+            if isSupervised:
+                print("Device is supervised")
+            else:
+                print("Device is NOT supervised")
+                # So now we unenroll the device
+                device_id = 'deviceId0'
+                collect['device_id'] = device_id
+
+                result = client.sm.unenrollNetworkSmDevice(networkId=arg_network_id, deviceId=arg_device_id)
 
     except meraki.APIError as e:
 

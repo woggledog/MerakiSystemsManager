@@ -71,8 +71,12 @@ def main(argv):
 
         try:
             result = client.sm.updateNetworkSmDeviceFields(networkId=arg_network_id, deviceFields=deviceFieldsDict, serial=ourDevice["serialNumber"])
+
+            result = client.networks.createOrganizationNetwork()
         except meraki.APIError as e:
             print(e)
+
+
 
 
 def getDevices(passedClient, passedNetwork, passedSerials):

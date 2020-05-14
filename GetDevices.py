@@ -39,7 +39,7 @@ def main(argv):
     client = meraki.DashboardAPI(api_key=arg_apikey)
 
     try:
-        result = client.sm.getNetworkSmDevices(networkId=arg_network_id)
+        result = client.sm.getNetworkSmDevices(networkId=arg_network_id,fields="ip")
         print(result)
     except APIException as e:
         print('Error:')

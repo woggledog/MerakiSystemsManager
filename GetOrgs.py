@@ -35,8 +35,8 @@ def main(argv):
         orgs = client.organizations.getOrganizations()
         writeToLog(orgs, loggingEnabled)
         for org in orgs:
-            organization_id = (org['id'].encode())
-            organization_name = (org['name'].encode())
+            organization_id = (org['id'])
+            organization_name = (org['name'])
             writeToLog(organization_id, loggingEnabled)
             writeToLog(organization_name, loggingEnabled)
             writeToLog(' ', loggingEnabled)
@@ -47,7 +47,6 @@ def main(argv):
         print('with error message :')
         print(e.context.response.raw_body)
         sys.exit(2)
-
 
 def writeToLog(MessageToLog, toLog):
     if toLog:
