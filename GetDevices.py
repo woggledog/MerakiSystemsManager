@@ -39,13 +39,13 @@ def main(argv):
     client = meraki.DashboardAPI(api_key=arg_apikey)
 
     try:
-        result = client.sm.getNetworkSmDevices(networkId=arg_network_id,fields="ip")
-        print(result)
-    except APIException as e:
-        print('Error:')
-        print(e.response_code)
-        print('with error message :')
-        print(e.context.response.raw_body)
+        ourDevices = client.sm.getNetworkSmDevices(networkId=arg_network_id, fields="ip")
+
+
+    except meraki.APIError as e:
+        print("error occured:")
+
+
 
 
 def writeToLog(MessageToLog, toLog):

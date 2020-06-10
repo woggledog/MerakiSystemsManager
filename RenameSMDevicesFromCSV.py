@@ -1,11 +1,14 @@
-import meraki
+import meraki # install from https://developer.cisco.com/meraki/api/#!python-meraki/meraki-dashboard-api-python-library
 import logging, sys, getopt, keyring, getpass, csv
+
+# keyring allows you to store your MerakiAPI key in your Mac's keychain securely, so you don't have to leave it in your code
 
 loggingEnabled = False
 
 
 def main(argv):
 
+    # when you put your API key in the keychain, it will be referenced via name and instance, so you can store multiple keys in there
     arg_apikey = keyring.get_password('MerakiAPI', 'personal')
     APIKeyExists = True
 
@@ -15,7 +18,7 @@ def main(argv):
 
     # initialize variables for command line arguments
     arg_network_id = ''
-    # get command line arguments
+    # get command line arguments. This script needs at the very minimum a network ID
     try:
         opts, args = getopt.getopt(argv, 'k:n:')
     except getopt.GetOptError:
@@ -34,6 +37,7 @@ def main(argv):
         printhelp(argv)
         sys.exit(2)
 
+    # we now open the CSV file
     with open('RenameSMDevices.csv', 'rt') as csvfile:
         deviceData = dict(csv.reader(csvfile))
 
@@ -72,7 +76,7 @@ def main(argv):
         try:
             result = client.sm.updateNetworkSmDeviceFields(networkId=arg_network_id, deviceFields=deviceFieldsDict, serial=ourDevice["serialNumber"])
 
-            result = client.networks.createOrganizationNetwork()
+            # result = client.networks.createOrganizationNetwork()
         except meraki.APIError as e:
             print(e)
 

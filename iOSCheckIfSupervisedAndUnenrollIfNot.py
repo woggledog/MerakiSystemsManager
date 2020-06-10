@@ -42,9 +42,13 @@ def main(argv):
 
     try:
 
-        ourDevices = client.sm.getNetworkSmDevices(networkId=arg_network_id, ids=arg_device_id, fields="isSupervised")
+        ourDevices = client.sm.getNetworkSmDevices(networkId=arg_network_id, ids=arg_device_id, fields="isSupervised,location")
 
         ourDevicesList = ourDevices["devices"]
+
+        print(ourDevices)
+
+        sys.exit(2)
 
         for ourDevice in ourDevicesList:
             isSupervised = ourDevice["isSupervised"]
@@ -57,7 +61,7 @@ def main(argv):
                 device_id = 'deviceId0'
                 collect['device_id'] = device_id
 
-                result = client.sm.unenrollNetworkSmDevice(networkId=arg_network_id, deviceId=arg_device_id)
+               #result = client.sm.unenrollNetworkSmDevice(networkId=arg_network_id, deviceId=arg_device_id)
 
     except meraki.APIError as e:
 
