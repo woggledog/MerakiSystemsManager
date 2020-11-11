@@ -15,8 +15,7 @@ loggingEnabled = True
 
 def main(argv):
     ##arg_apikey = keyring.get_password('MerakiAPI', 'personal')
-    arg_apikey = keyring.get_password('MerakiAPI', 'LGFL'
-                                                   '')
+    arg_apikey = keyring.get_password('MerakiAPI', 'LG')
     fileForResults = "GetSMLicenseUtilisationResults.csv"
     fileForResultsFail = "GetSMLicenseUtilisationResultsFail.txt"
     fileForRawOrgDetails = "GetSMLicenseUtilisationResultsRawOrgs.txt"
